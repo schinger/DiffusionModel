@@ -57,11 +57,12 @@ class Block(nn.Module):
     def __init__(self, size: int):
         super().__init__()
 
+        self.ln = nn.LayerNorm(size)
         self.ff = nn.Linear(size, size)
         self.act = nn.GELU()
 
     def forward(self, x: torch.Tensor):
-        return x + self.act(self.ff(x))
+        return x + self.act(self.ff(self.ln(x)))
 
 class SinusoidalEmbedding(nn.Module):
     def __init__(self, size: int, scale: float = 1.0):
@@ -97,6 +98,7 @@ class MLP(nn.Module):
         layers = [nn.Linear(self.concat_size, hidden_size), nn.GELU()]
         for _ in range(hidden_layers):
             layers.append(Block(hidden_size))
+        layers.append(nn.LayerNorm(hidden_size))
         layers.append(nn.Linear(hidden_size, self.data_size))
         self.joint_mlp = nn.Sequential(*layers)
 
