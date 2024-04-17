@@ -3,14 +3,12 @@ import os
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
-import numpy as np
 from torch.utils.data import TensorDataset
-from torchvision.datasets import MNIST
-from torchvision import transforms
 
 # animation
 from celluloid import Camera
@@ -36,6 +34,8 @@ def perfect_heart_dataset(n=8000):
     return TensorDataset(torch.from_numpy(X.astype(np.float32)))
 
 def mnist_dataset(train=True):
+    from torchvision.datasets import MNIST
+    from torchvision import transforms
     transform = transforms.Compose([transforms.ToTensor()])
     train_dataset = MNIST(
             "./data", download=True, train=train, transform=transform
@@ -56,7 +56,6 @@ def get_dataset(name, n=8000):
 class Block(nn.Module):
     def __init__(self, size: int):
         super().__init__()
-
         self.ln = nn.LayerNorm(size)
         self.ff = nn.Linear(size, size)
         self.act = nn.GELU()
@@ -203,8 +202,8 @@ if __name__ == "__main__":
             progress_bar = tqdm(total=len(dataloader))
             progress_bar.set_description(f"Epoch {epoch}")
             for step, batch in enumerate(dataloader):
-                # print(batch.shape)
-                # batch = batch[0]
+                if type(batch) == list:
+                    batch = batch[0]
                 noise = torch.randn(batch.shape)
                 timesteps = torch.randint(
                     0, diffusion.num_timesteps, (batch.shape[0],)
@@ -242,8 +241,8 @@ if __name__ == "__main__":
     for i, t in enumerate(tqdm(timesteps)):
         t = torch.from_numpy(np.repeat(t, config.eval_batch_size)).long()
         with torch.no_grad():
-            residual = model(sample.to(device), t.to(device)).to("cpu")
-        sample = diffusion.sample_step(residual, t[0], sample)
+            noise_pred = model(sample.to(device), t.to(device)).to("cpu")
+        sample = diffusion.sample_step(noise_pred, t[0], sample)
         if i % config.show_image_step == 0:
             reverse_samples.append(sample)
     n_hold_final = 30
@@ -272,7 +271,7 @@ if __name__ == "__main__":
             plt.scatter(sample[:, 0], sample[:, 1], alpha=0.5, s=15, color="red")
             steps = i if i < len(forward_samples) else i - len(forward_samples)
             ax.text(0.0, 0.95, f"step {steps+1: 4} / {config.num_timesteps}", transform=ax.transAxes)
-            ax.text(0.0, 1.01, "Forward process" if i < len(forward_samples) else "Reverse process", transform=ax.transAxes, size=15)
+            ax.text(0.0, 1.01, "Forward" if i < len(forward_samples) else "Reverse", transform=ax.transAxes, size=15)
             plt.xlim(xmin, xmax)
             plt.ylim(ymin, ymax)
             plt.axis('scaled')
@@ -283,11 +282,6 @@ if __name__ == "__main__":
         animation.save(f"{outdir}/animation_2d.gif")
 
     else:
-        # show reverse process only
-        # dataset = get_dataset('mnist')
-        # dataset = dataset[:10].unsqueeze(0).expand(20,-1,-1)
-        # reverse_samples = dataset
-
         reverse_samples = torch.stack(reverse_samples, dim=0)
         reverse_samples = (reverse_samples.clamp(-1, 1) + 1) / 2
         reverse_samples = (reverse_samples * 255).type(torch.uint8)
@@ -296,7 +290,6 @@ if __name__ == "__main__":
         for i in range(len(reverse_samples)):
             reverse_samples[i] = reverse_samples[i].squeeze(1)
         reverse_samples = torch.cat(reverse_samples, dim=-1)
-        print(len(reverse_samples))
         imageio.mimsave(
             f"{outdir}/animation_mnist.gif",
             list(reverse_samples),
