@@ -1,4 +1,4 @@
-# DiffusionModel
+# Diffusion Model
 Implement Diffusion Model (Denoising Diffusion Probabilistic Models) only by Pytorch. It is the clearest/simplest (Within 300 lines) but complete implementation of DDPM. Unlike traditional implementation which use U-Net, this implementation only use MLP. 
 
 Two datasets are supported: 2D data and MNIST.
@@ -23,6 +23,9 @@ The command train MLP diffusion model on MNIST (within 3 minutes in gpu), show r
 
 
 <img src="images/animation_mnist.gif" alt="drawing" width="500"/>
+
+
+We know that the mathematics of diffusion model is  complex, but the implementation is very simple. Will provide a from scratch derivation of the math behind diffusion model so that everyone with basic knowledge of probability and calculus can understand. Please stay tuned.
 
 # Reference Implementation
 - https://github.com/awjuliani/pytorch-diffusion
