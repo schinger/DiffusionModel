@@ -9,7 +9,7 @@ We generate a [heart](https://mathworld.wolfram.com/HeartCurve.html) like two di
 ```bash
 python dm.py
 ```
-This command train 2d diffusion model (whthin 3 minutes in cpu), show forward and reverse diffusion process by a bunch of 2d points. *Note that the training sample is not an image of 2d points, but a single 2d point.*
+This command train 2d diffusion model (within 3 minutes in cpu), show forward and reverse diffusion process by a bunch of 2d points. *Note that the training sample is not an image of 2d points, but a single 2d point.*
 
 ![2D Data Generation](images/animation_2d.gif)
 
