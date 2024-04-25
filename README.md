@@ -2,7 +2,7 @@
 Implement Diffusion Model (Denoising Diffusion Probabilistic Models) only by Pytorch. It is the clearest/simplest (Within 300 lines) but complete implementation of DDPM. Unlike traditional implementation which use U-Net, this implementation only use MLP. Two datasets are supported: 2D data and MNIST.
 
 ## 2D data
-We generate a [heart](https://mathworld.wolfram.com/HeartCurve.html) like two dimensional points. Each training sample is just a 2D point (x, y). One important [preprocessing step is](https://arxiv.org/abs/2006.10739) to convert each coordinate to sinusoidal embeddings before feeding to the model. 
+We generate a [heart](https://mathworld.wolfram.com/HeartCurve.html) like two dimensional points. Each training sample is just a 2D point (x, y). One important [preprocessing](https://arxiv.org/abs/2006.10739) step is to convert each coordinate to sinusoidal embeddings before feeding to the model. 
 
 ```bash
 python dm.py
