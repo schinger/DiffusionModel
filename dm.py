@@ -126,7 +126,6 @@ class Diffusion():
         self.alphas_cumprod_prev = F.pad(
             self.alphas_cumprod[:-1], (1, 0), value=1.)
 
-        # required for self.add_noise
         self.sqrt_alphas_cumprod = self.alphas_cumprod ** 0.5
         self.sqrt_one_minus_alphas_cumprod = (1 - self.alphas_cumprod) ** 0.5
 
@@ -135,11 +134,13 @@ class Diffusion():
         self.variance = self.betas * (1. - self.alphas_cumprod_prev) / (1. - self.alphas_cumprod)
 
     def add_noise(self, x_start, x_noise, timesteps):
+        # compute x_t for DDPM algorithm 1
         s1 = self.sqrt_alphas_cumprod[timesteps].reshape(-1, 1)
         s2 = self.sqrt_one_minus_alphas_cumprod[timesteps].reshape(-1, 1)
         return s1 * x_start + s2 * x_noise
     
     def sample_step(self, model_output, timestep, sample):
+        # compute x_{t-1} for DDPM algorithm 2
         s1 = self.sqrt_inv_alphas[timestep].reshape(-1, 1)
         s2 = self.noise_coef[timestep].reshape(-1, 1)
         s3 = self.variance[timestep].reshape(-1, 1) ** 0.5
