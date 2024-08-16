@@ -80,3 +80,105 @@ $$
 
 在下一节中，我们将结合代码来详细讲解 Diffusion Model 的实现细节。
 
+## 3. 代码实现
+
+本节将结合代码详细讲解 Diffusion Model 的实现细节，并展示如何使用该模型生成爱心和 MNIST 手写数字图像。**不同于传统的 Diffusion Model 使用 U-Net 作为模型结构，我们使用最简单的 MLP来实现，非常简洁，总共不到 300 行代码：https://github.com/schinger/DiffusionModel**
+
+### 3.1 数据集准备
+
+代码中提供了两个数据集：`perfect_heart_dataset` 和 `mnist_dataset`，分别用于生成 2D 心形数据和 MNIST 手写数字图像。
+
+* **2D 爱心数据：**  通过[数学公式](https://mathworld.wolfram.com/HeartCurve.html)生成一个完美的爱心（够浪漫吧！）。
+
+* **MNIST 手写数字图像：**  使用 PyTorch 自带的 torchvision.datasets.MNIST 加载 MNIST 数据集，并转化为一维向量。
+
+
+
+### 3.2 模型结构
+
+我们使用一个简单的 `MLP` 模型来预测噪声。模型的输入是带有噪声的数据 $x_t$ 和时间步 $t$，输出是预测的噪声 $\epsilon_\theta(x_t, t)$。
+
+模型结构如下：
+
+* **时间嵌入 (Time Embedding):**  将时间步 $t$ 转换为一个向量，使用 Sinusoidal Embedding 方法。
+
+* **数据嵌入 (Data Embedding):**  对于 2D 数据，将每个坐标 (x, y) 分别转换为一个固定维度的向量，[同样使用 Sinusoidal Embedding 方法](https://arxiv.org/abs/2006.10739)。对于 MNIST 数据，直接将图像展平为一个向量。
+
+* **联合 `MLP` (Joint MLP):**  将时间嵌入和数据嵌入拼接在一起，输入到一个 MLP 中，最后输出预测的噪声。
+
+
+### 3.3 扩散过程
+
+代码中定义了一个 `Diffusion` 类来实现前向扩散和反向扩散过程。
+
+* **前向扩散 (`add_noise`):**  根据公式  $x_t = \sqrt{\bar\alpha_t} x_{0} + \sqrt{1 - \bar\alpha_t} \epsilon$  向数据中添加噪声。
+
+* **反向扩散 (`sample_step`):**  根据公式  $x_{t-1} = \frac{1}{\sqrt{\alpha_t}}(x_t-\frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}\epsilon_\theta(x_t,t))+\sigma_tz$ 从噪声中恢复数据。
+
+
+
+### 3.4 训练过程
+
+训练过程主要包括以下步骤：
+
+1. 从数据集中随机采样一个 batch 的数据。
+2. 随机选择一个时间步 $t$。
+3. 根据前向扩散公式，向数据中添加噪声。
+4. 将带有噪声的数据和时间步输入到模型中，预测噪声。
+5. 计算预测噪声和真实噪声之间的均方误差 (MSE) 损失。$\| \epsilon - \epsilon_\theta(x_t, t) \|^2$
+6. 反向传播损失，更新模型参数。
+
+
+
+### 3.5 生成样本
+
+训练完成后，我们可以使用模型来生成新的样本。
+
+1. 从标准高斯分布中采样一个随机噪声。
+2. 从 $T$ 到 $1$ 迭代，每一步都使用模型预测噪声，并根据反向扩散公式从噪声中逐步恢复数据。
+3. 最后得到的数据即为生成的样本。
+
+
+
+### 3.6 结果动画展示
+
+* **2D 心形数据正反向扩散：**
+
+![2D Data Generation](images/animation_2d.gif)
+
+* **MNIST 手写数字图像生成：**
+
+<img src="images/animation_mnist.gif" alt="drawing" width="500"/>
+
+
+**通过以上代码和结果展示，我们可以看到，Diffusion Model 的实现并不复杂，使用简单的 MLP 模型也可以取得不错的效果。**
+
+
+接下来，我们将深入探讨 Diffusion Model 的公式推导，帮助读者更深入地理解其背后的数学原理。
+
+
+## 4. 公式推导
+
+为了深入理解 Diffusion Model 的工作原理，本节将从头开始推导其背后的数学公式，只要求读者具备基本的概率论和微积分知识即可。
+
+### 4.1 变分下界 (Variational Lower Bound) 的推导
+
+我们的目标是学习数据的概率分布，并能够生成新的样本。由于直接建模 $p_\theta(x_0)$ 比较困难，我们对$- \log p_\theta(x_0)$进行一些推导，考虑到Diffusion Model为隐变量模型（其中$x_{1:T}$为隐变量），且KL散度非负的性质:
+
+$$\begin{aligned}
+- \log p_\theta({x}_0) 
+&\leq - \log p_\theta({x}_0) + D_\text{KL}(q({x}_{1:T}\vert{x}_0) \| p_\theta({x}_{1:T}\vert{x}_0) ) \\
+&= -\log p_\theta({x}_0) + \mathbb{E}_{{x}_{1:T}\sim q({x}_{1:T} \vert {x}_0)} \Big[ \log\frac{q({x}_{1:T}\vert{x}_0)}{p_\theta({x}_{0:T}) / p_\theta({x}_0)} \Big] \\
+&= -\log p_\theta({x}_0) + \mathbb{E}_q \Big[ \log\frac{q({x}_{1:T}\vert{x}_0)}{p_\theta({x}_{0:T})} + \log p_\theta({x}_0) \Big] \\
+&= \mathbb{E}_q \Big[ \log \frac{q({x}_{1:T}\vert{x}_0)}{p_\theta({x}_{0:T})} \Big] \\
+&= L
+\end{aligned}
+$$
+
+$-L$即为传说中的Variational Lower Bound(VLB)，又称为Evidence Lower Bound(ELBO)：
+
+$$
+\log p_\theta({x}_0) \geq -L
+$$
+
+我们的优化目标即为最小化$L$，对其进行一系列恒等变换：
