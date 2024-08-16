@@ -1,6 +1,6 @@
 ## 1. 背景介绍
 
-生成模型是机器学习领域中一个重要的研究方向，其目标是学习数据的概率分布，并能够生成新的、与训练数据同分布的数据样本。近年来，生成模型在图像生成、文本创作、药物发现等领域取得了显著的成果，并展现出巨大的应用潜力。
+生成模型是机器学习领域中一个重要的研究方向，其目标是学习数据的概率分布，并能够生成新的、与训练数据同分布的数据样本。近年来，生成模型在图像生成、视频生成、文本创作、蛋白质发现等领域取得了显著的成果，并展现出巨大的应用潜力。
 
 传统的生成模型（自回归模型（Autoregressive ）在另外一篇文章介绍），如变分自编码器（VAE）和生成对抗网络（GAN），各有其优缺点。VAE 通常会生成较为模糊的图像，而 GAN 则面临着训练不稳定和模式坍塌等问题。
 
@@ -13,7 +13,7 @@ Diffusion Model 的优势在于：
 * **理论基础扎实：** Diffusion Model 的理论基础来源于非平衡热力学，具有良好的理论特性。
 
 
-**Diffusion Model 的发展历程可以追溯到 2015 年的 “Deep Unsupervised Learning using Nonequilibrium Thermodynamics” 论文。** 该论文提出了基于扩散过程的生成模型框架，但真正引起广泛关注的是 “Denoising Diffusion Probabilistic Models” 论文的发表，该论文提出了一种非常简洁的 Diffusion Model 算法，并通过实验证明了其在图像生成方面的优越性。
+**Diffusion Model 的发展历程可以追溯到 2015 年的 “Deep Unsupervised Learning using Nonequilibrium Thermodynamics” 论文。** 该论文提出了基于扩散过程的生成模型框架，但真正引起广泛关注的是 “Denoising Diffusion Probabilistic Models” 论文的发表，该论文提出了一种非常简洁的 Diffusion 算法，并通过实验证明了其在图像生成方面的优越性。
 
 **近年来，Diffusion Model 发展迅速，涌现出许多改进算法和应用场景，例如 Stable Diffusion系列、DALL-E 系列、SoRA系列 等。** 这些模型的成功进一步证明了 Diffusion Model 的强大能力。
 
@@ -34,14 +34,12 @@ $$
 
 其中，$\beta_t$  是时间步  $t$  的噪声方差，通常是一个单调递增的序列。 $\mathcal{N}(x; \mu, \Sigma)$ 表示均值为 $\mu$，方差为 $\Sigma$ 的高斯分布。
 
-**这个公式的含义是，在时间步  $t$，我们从一个以  $\sqrt{1 - \beta_t} x_{t-1}$ 为均值， $\beta_t I$ 为方差的高斯分布中采样得到  $x_t$。** 随着时间步  $t$  的增加，噪声方差逐渐增大，最终  $x_T$  将变成近似纯噪声。
-
-**值得注意的是，上面的公式可以等价的写成如下形式 (记 $\alpha_t = 1 - \beta_t$)：**
+上面的公式可以等价的写成如下形式 (记 $\alpha_t = 1 - \beta_t$)：
 $$
 x_t = \sqrt{\alpha_t} x_{t-1} + \sqrt{1 - \alpha_t} \epsilon_t
 $$
 
-**通过递推运算我们可以得到任意时间步 t 的  $x_t$：**
+**这个公式直接表达了向样本$x_{t-1}$添加噪声的$\epsilon_t$过程，通过递推运算我们可以得到任意时间步 $t$ 的  $x_t$：**
 
 
 $$
